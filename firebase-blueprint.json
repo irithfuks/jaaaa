@@ -1,0 +1,311 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Comprehensive user profile, learning progress, vocabulary bank, SRS intervals, and streaks.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "User's email address",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name of the user",
+          "maxLength": 100
+        },
+        "username": {
+          "type": "string",
+          "description": "Unique username handle",
+          "maxLength": 50,
+          "pattern": "^[a-zA-Z0-9_]+$"
+        },
+        "targetLanguage": {
+          "type": "string",
+          "description": "Target language code being learned",
+          "maxLength": 10
+        },
+        "knownLanguage": {
+          "type": "string",
+          "description": "Base known language code",
+          "maxLength": 10
+        },
+        "level": {
+          "type": "string",
+          "description": "Current CEFR level",
+          "maxLength": 5
+        },
+        "numericLevel": {
+          "type": "number",
+          "description": "Granular numeric level from 1 to 60"
+        },
+        "levelVerified": {
+          "type": "boolean",
+          "description": "Whether level was verified through placement test"
+        },
+        "createdAt": {
+          "type": "number",
+          "description": "Epoch timestamp of account creation"
+        },
+        "lastActiveAt": {
+          "type": "number",
+          "description": "Epoch timestamp of last activity"
+        },
+        "lastActiveDateStr": {
+          "type": "string",
+          "description": "Date string YYYY-MM-DD for streak calculation",
+          "maxLength": 12
+        },
+        "streakDays": {
+          "type": "number",
+          "description": "Current active daily streak in days"
+        },
+        "maxStreakDays": {
+          "type": "number",
+          "description": "Highest recorded daily streak in days"
+        },
+        "totalSessionsCompleted": {
+          "type": "number",
+          "description": "Total completed study sessions"
+        },
+        "isAdmin": {
+          "type": "boolean",
+          "description": "Flag for administrative privileges"
+        }
+      },
+      "required": ["email", "name", "targetLanguage", "level", "createdAt"]
+    },
+    "PublicUserProfile": {
+      "title": "PublicUserProfile",
+      "description": "Sanitized public profile summary visible to friends and community leaderboards.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "User identifier",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address",
+          "maxLength": 128
+        },
+        "ownerEmail": {
+          "type": "string",
+          "description": "User owner email address",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name",
+          "maxLength": 100
+        },
+        "username": {
+          "type": "string",
+          "description": "Username handle",
+          "maxLength": 50
+        },
+        "avatarUrl": {
+          "type": "string",
+          "description": "Avatar image URL",
+          "maxLength": 500
+        },
+        "targetLanguage": {
+          "type": "string",
+          "description": "Target language code",
+          "maxLength": 10
+        },
+        "knownLanguage": {
+          "type": "string",
+          "description": "Known language code",
+          "maxLength": 10
+        },
+        "level": {
+          "type": "string",
+          "description": "CEFR level",
+          "maxLength": 5
+        },
+        "numericLevel": {
+          "type": "number",
+          "description": "Numeric level"
+        },
+        "currentStreak": {
+          "type": "number",
+          "description": "Current active daily streak in days"
+        },
+        "streakDays": {
+          "type": "number",
+          "description": "Streak count in days"
+        },
+        "maxStreakDays": {
+          "type": "number",
+          "description": "Highest recorded streak count in days"
+        },
+        "weeklyNewWordsCount": {
+          "type": "number",
+          "description": "Number of new words learned this week"
+        },
+        "totalWordsLearned": {
+          "type": "number",
+          "description": "Number of mastered or reviewed words"
+        },
+        "totalSessionsCompleted": {
+          "type": "number",
+          "description": "Total study sessions completed"
+        },
+        "following": {
+          "type": "array",
+          "description": "List of user emails or IDs this user follows",
+          "items": { "type": "string" }
+        },
+        "followers": {
+          "type": "array",
+          "description": "List of user emails or IDs who follow this user",
+          "items": { "type": "string" }
+        },
+        "lastActiveDateStr": {
+          "type": "string",
+          "description": "Date string of last activity",
+          "maxLength": 12
+        },
+        "updatedAt": {
+          "type": "number",
+          "description": "Timestamp of last update"
+        }
+      },
+      "required": ["userId", "name", "targetLanguage", "level"]
+    },
+    "SavedSession": {
+      "title": "SavedSession",
+      "description": "Snapshot of an in-progress study or review session.",
+      "type": "object",
+      "properties": {
+        "sessionId": {
+          "type": "string",
+          "description": "Unique session ID",
+          "maxLength": 128
+        },
+        "sessionType": {
+          "type": "string",
+          "description": "Type of session: daily or rusty",
+          "maxLength": 20
+        },
+        "targetLanguage": {
+          "type": "string",
+          "description": "Target language of session",
+          "maxLength": 10
+        },
+        "savedAt": {
+          "type": "number",
+          "description": "Timestamp when session state was saved"
+        },
+        "completedTasksCount": {
+          "type": "number",
+          "description": "Number of completed cards/tasks"
+        },
+        "baseExpectedTasks": {
+          "type": "number",
+          "description": "Total scheduled tasks"
+        }
+      },
+      "required": ["sessionId", "sessionType", "targetLanguage", "savedAt"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Trusted administrative document mapping user IDs to administrator privileges.",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Admin email",
+          "maxLength": 128
+        },
+        "grantedAt": {
+          "type": "number",
+          "description": "Timestamp when admin role was granted"
+        }
+      },
+      "required": ["email", "grantedAt"]
+    },
+    "TranslationOverride": {
+      "title": "TranslationOverride",
+      "description": "Aggregates 'I was correct' override clicks for vocabulary words across study sessions and quizzes, identifying candidate translations.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique override ID, composed of target language and sanitized target word",
+          "maxLength": 128
+        },
+        "targetWord": {
+          "type": "string",
+          "description": "Target language word that was being reviewed",
+          "maxLength": 100
+        },
+        "cleanTargetWord": {
+          "type": "string",
+          "description": "Target word without vowels or accents for fuzzy searching",
+          "maxLength": 100
+        },
+        "targetLanguage": {
+          "type": "string",
+          "description": "Target language code (e.g. he, es, fr)",
+          "maxLength": 10
+        },
+        "knownLanguage": {
+          "type": "string",
+          "description": "Known language code (e.g. en, nl)",
+          "maxLength": 10
+        },
+        "expectedTranslation": {
+          "type": "string",
+          "description": "Primary translation configured for the word",
+          "maxLength": 200
+        },
+        "overrideCount": {
+          "type": "number",
+          "description": "Total override clicks recorded"
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the feedback: pending, resolved, dismissed",
+          "maxLength": 20
+        },
+        "firstReportedAt": {
+          "type": "number",
+          "description": "Timestamp of first recorded override"
+        },
+        "lastReportedAt": {
+          "type": "number",
+          "description": "Timestamp of most recent override"
+        }
+      },
+      "required": ["id", "targetWord", "targetLanguage", "expectedTranslation", "overrideCount", "status", "lastReportedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Primary user profile and vocabulary progress store."
+    },
+    "/publicProfiles/{userId}": {
+      "schema": "PublicUserProfile",
+      "description": "Public user summaries for social leaderboards and friends."
+    },
+    "/users/{userId}/sessions/{sessionId}": {
+      "schema": "SavedSession",
+      "description": "Saved in-progress study session states."
+    },
+    "/admins/{adminId}": {
+      "schema": "Admin",
+      "description": "Trusted role registry for application administrators."
+    },
+    "/translationOverrides/{overrideId}": {
+      "schema": "TranslationOverride",
+      "description": "Aggregated records of user translation overrides ('I was correct') to identify candidate alternative translations."
+    }
+  }
+}

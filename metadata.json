@@ -1,0 +1,6 @@
+{
+  "name": "Vocabulary Learning",
+  "description": "Adaptive vocabulary learning application with Gmail account sync, level placement verification, and smart spaced repetition.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": []
+}

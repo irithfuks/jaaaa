@@ -1,0 +1,171 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && (
+        request.auth.uid == userId ||
+        (request.auth.token.email != null && (
+          (resource != null && (
+            ('email' in resource.data && resource.data.email == request.auth.token.email) ||
+            ('ownerEmail' in resource.data && resource.data.ownerEmail == request.auth.token.email)
+          )) ||
+          (request.resource != null && (
+            ('email' in request.resource.data && request.resource.data.email == request.auth.token.email) ||
+            ('ownerEmail' in request.resource.data && request.resource.data.ownerEmail == request.auth.token.email)
+          )) ||
+          (exists(/databases/$(database)/documents/users/$(userId)) &&
+           get(/databases/$(database)/documents/users/$(userId)).data.email == request.auth.token.email)
+        ))
+      );
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (request.auth.token.email != null && request.auth.token.email == 'irithfuks@gmail.com')
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128;
+    }
+
+    function isValidUserProfile(data) {
+      return data.email is string && data.email.size() <= 128
+        && (!('name' in data) || (data.name is string && data.name.size() <= 100))
+        && (!('targetLanguage' in data) || (data.targetLanguage is string && data.targetLanguage.size() <= 10))
+        && (!('level' in data) || (data.level is string && data.level.size() <= 10));
+    }
+
+    function isValidPublicProfile(data) {
+      return data.userId is string && data.userId.size() <= 128
+        && (!('name' in data) || (data.name is string && data.name.size() <= 100))
+        && (!('username' in data) || (data.username is string && data.username.size() <= 100))
+        && (!('targetLanguage' in data) || (data.targetLanguage is string && data.targetLanguage.size() <= 10))
+        && (!('knownLanguage' in data) || (data.knownLanguage is string && data.knownLanguage.size() <= 10))
+        && (!('level' in data) || (data.level is string && data.level.size() <= 10))
+        && (!('email' in data) || (data.email is string && data.email.size() <= 128))
+        && (!('ownerEmail' in data) || (data.ownerEmail is string && data.ownerEmail.size() <= 128))
+        && (!('currentStreak' in data) || data.currentStreak is number)
+        && (!('streakDays' in data) || data.streakDays is number)
+        && (!('maxStreakDays' in data) || data.maxStreakDays is number)
+        && (!('weeklyNewWordsCount' in data) || data.weeklyNewWordsCount is number)
+        && (!('totalWordsLearned' in data) || data.totalWordsLearned is number)
+        && (!('totalSessionsCompleted' in data) || data.totalSessionsCompleted is number)
+        && (!('following' in data) || data.following is list)
+        && (!('followers' in data) || data.followers is list);
+    }
+
+    function isValidSavedSession(data) {
+      return data.sessionId is string && data.sessionId.size() <= 128
+        && data.sessionType is string && data.sessionType.size() <= 20
+        && (!('targetLanguage' in data) || (data.targetLanguage is string && data.targetLanguage.size() <= 10))
+        && (!('email' in data) || (data.email is string && data.email.size() <= 128))
+        && (!('ownerEmail' in data) || (data.ownerEmail is string && data.ownerEmail.size() <= 128));
+    }
+
+    function isValidTranslationOverride(data) {
+      return data.targetWord is string && data.targetWord.size() <= 100
+        && data.targetLanguage is string && data.targetLanguage.size() <= 10
+        && data.expectedTranslation is string && data.expectedTranslation.size() <= 200
+        && (!('overrideCount' in data) || data.overrideCount is number)
+        && (!('status' in data) || data.status in ['pending', 'resolved', 'dismissed']);
+    }
+
+    // Admin role document collection
+    match /admins/{adminId} {
+      allow read: if isSignedIn() && (request.auth.uid == adminId || isAdmin() || resource == null);
+      allow write: if isAdmin();
+    }
+
+    // User Private Profile and Progress
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (
+        !isSignedIn() ||
+        request.auth.uid == userId ||
+        isOwner(userId) ||
+        isAdmin() ||
+        resource == null
+      );
+      allow list: if isAdmin() || !isSignedIn();
+      
+      allow create, update: if isValidId(userId) && (
+        !isSignedIn() ||
+        isOwner(userId) ||
+        isAdmin()
+      ) && isValidUserProfile(request.resource.data);
+
+      allow delete: if isValidId(userId) && (!isSignedIn() || isOwner(userId) || isAdmin());
+
+      // Subcollection for in-progress saved sessions
+      match /sessions/{sessionId} {
+        allow read, write: if isValidId(sessionId) && isValidId(userId);
+      }
+
+      // Subcollection for individual word progress records
+      match /wordProgress/{wordId} {
+        allow read, write: if isValidId(wordId) && isValidId(userId);
+      }
+    }
+
+    // Public health / connection check document
+    match /test/{docId} {
+      allow read, write: if true;
+    }
+
+    // Public Profiles for leaderboard, community, and friend search (streaks, words, following are public)
+    match /publicProfiles/{userId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(userId);
+      allow delete: if isValidId(userId) && (isOwner(userId) || isAdmin());
+    }
+
+    // Friend Poules - visible and accessible to all members for competitive leaderboard rankings
+    match /pools/{poolId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(poolId);
+      allow delete: if isValidId(poolId);
+    }
+
+    // Email to UID directory index for fast lookup
+    match /emailIndex/{emailKey} {
+      allow read, write: if isValidId(emailKey);
+    }
+
+    // Words & vocabulary dictionaries
+    match /woorden/{wordId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    match /words/{wordId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    match /vocabulary/{wordId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    match /milim/{wordId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Translation Overrides collection for 'I was correct' feedback
+    match /translationOverrides/{overrideId} {
+      allow get, list: if isSignedIn() || isAdmin();
+      allow create, update: if (isSignedIn() || isAdmin()) && isValidTranslationOverride(request.resource.data);
+      allow delete: if isAdmin();
+    }
+  }
+}
